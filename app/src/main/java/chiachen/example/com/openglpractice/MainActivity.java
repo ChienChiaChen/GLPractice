@@ -10,6 +10,7 @@ import android.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -42,11 +43,20 @@ public class MainActivity extends AppCompatActivity {
 				+ "void main() {\n"
 				+ "  gl_FragColor = vec4(0.5,0,0,1);\n"
 				+ "}";
+		// private static final float[] VERTEX = {   // in counterclockwise order:
+		// 		0, 1, 0.0f, // top
+		// 		-0.5f, -1, 0.0f, // bottom left
+		// 		1f, -1, 0.0f,  // bottom right
+		// };
+		//
 		private static final float[] VERTEX = {   // in counterclockwise order:
-				0, 1, 0.0f, // top
-				-0.5f, -1, 0.0f, // bottom left
-				1f, -1, 0.0f,  // bottom right
+				1, 1, 0,   // top right
+				-1, 1, 0,  // top left
+				-1, -1, 0, // bottom left
+				1, -1, 0,  // bottom right
 		};
+		private static final short[] VERTEX_INDEX = { 0, 1, 2, 0, 2, 3 };
+		private final ShortBuffer mVertexIndexBuffer;
 		
 		private final FloatBuffer mVertexBuffer;
 		
@@ -60,11 +70,22 @@ public class MainActivity extends AppCompatActivity {
 		private final float[] mMVPMatrix = new float[16];
 		
 		MyRenderer() {
+			// mVertexBuffer = ByteBuffer.allocateDirect(VERTEX.length * 4)
+			// 		.order(ByteOrder.nativeOrder())
+			// 		.asFloatBuffer()
+			// 		.put(VERTEX);
+			// mVertexBuffer.position(0);
 			mVertexBuffer = ByteBuffer.allocateDirect(VERTEX.length * 4)
 					.order(ByteOrder.nativeOrder())
 					.asFloatBuffer()
 					.put(VERTEX);
 			mVertexBuffer.position(0);
+			
+			mVertexIndexBuffer = ByteBuffer.allocateDirect(VERTEX_INDEX.length * 2)
+					.order(ByteOrder.nativeOrder())
+					.asShortBuffer()
+					.put(VERTEX_INDEX);
+			mVertexIndexBuffer.position(0);
 		}
 		
 		@Override
@@ -102,19 +123,33 @@ public class MainActivity extends AppCompatActivity {
 		
 		@Override
 		public void onDrawFrame(GL10 unused) {
-			Log.e("test","onDrawFrame");
+			// Log.e("test","onDrawFrame");
+			// GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+			//
+			// GLES20.glUseProgram(mProgram);
+			//
+			// GLES20.glEnableVertexAttribArray(mPositionHandle);
+			//
+			// GLES20.glVertexAttribPointer(mPositionHandle, 3, GLES20.GL_FLOAT, false, 12, mVertexBuffer);
+			//
+			// //----
+			// GLES20.glUniformMatrix4fv(mMatrixHandle, 1, false, mMVPMatrix, 0);
+			// //----
+			// GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3);
+			//
+			// GLES20.glDisableVertexAttribArray(mPositionHandle);
 			GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 			
 			GLES20.glUseProgram(mProgram);
 			
 			GLES20.glEnableVertexAttribArray(mPositionHandle);
+			GLES20.glVertexAttribPointer(mPositionHandle, 3, GLES20.GL_FLOAT, false, 0,
+					mVertexBuffer);
 			
-			GLES20.glVertexAttribPointer(mPositionHandle, 3, GLES20.GL_FLOAT, false, 12, mVertexBuffer);
-			
-			//----
 			GLES20.glUniformMatrix4fv(mMatrixHandle, 1, false, mMVPMatrix, 0);
-			//----
-			GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3);
+			
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, VERTEX_INDEX.length,
+					GLES20.GL_UNSIGNED_SHORT, mVertexIndexBuffer);
 			
 			GLES20.glDisableVertexAttribArray(mPositionHandle);
 		}
